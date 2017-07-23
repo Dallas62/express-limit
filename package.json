@@ -1,0 +1,35 @@
+{
+  "name": "express-limit",
+  "version": "0.0.0",
+  "description": "A rate-limiter for Express JS.",
+  "main": "index.js",
+  "scripts": {
+    "test": "nodeunit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/Dallas62/express-limit.git"
+  },
+  "keywords": [
+    "rate",
+    "limit",
+    "express",
+    "expressjs",
+    "limiter",
+    "security",
+    "api"
+  ],
+  "author": "Tacyniak Boris <boris.tacyniak@free.fr> (https://www.tacyniak.fr/)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Dallas62/express-limit/issues"
+  },
+  "homepage": "https://github.com/Dallas62/express-limit#readme",
+  "devDependencies": {
+    "babel-cli": "^6.24.1",
+    "babel-preset-env": "^1.5.2",
+    "express": "^4.15.3",
+    "nodeunit": "^0.11.1",
+    "supertest": "^3.0.0"
+  }
+}
