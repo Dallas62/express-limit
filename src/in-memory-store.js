@@ -1,5 +1,5 @@
 
-class InMemory {
+class InMemoryStore {
 
     constructor() {
         this._storage = {};
@@ -27,15 +27,4 @@ class InMemory {
     }
 }
 
-class RateLimitStore {
-
-    constructor(store = new InMemory()) {
-        this._store = store;
-    }
-
-    incrementLimit(key, reset, callback) {
-        this._store.increment(key, reset, callback);
-    }
-}
-
-module.exports = RateLimitStore;
+module.exports = InMemoryStore;

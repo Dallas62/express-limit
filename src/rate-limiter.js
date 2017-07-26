@@ -1,5 +1,5 @@
 
-const Store = require('./rate-limit-store');
+const InMemoryStore = require('./in-memory-store');
 
 
 class RateLimiter {
@@ -19,7 +19,7 @@ class RateLimiter {
             reset:     'X-RateLimit-Reset',
             limit:     'X-RateLimit-Limit'
         },
-        store   = new Store() // Default storage in-memory
+        store   = new InMemoryStore() // Default storage in-memory
     } = {}) {
 
         this._max        = max;
@@ -39,8 +39,8 @@ class RateLimiter {
             throw new Error('The period value must be greater than 0.');
         }
 
-        if('function' !== typeof this._store.incrementLimit) {
-            throw new Error('Store should have a ".incrementLimit()" method.');
+        if('function' !== typeof this._store.increment) {
+            throw new Error('Store should have a ".increment()" method.');
         }
     }
 
@@ -55,7 +55,7 @@ class RateLimiter {
             const now = Date.now();
             const key = this._prefix + req.url + '-' + identifier;
 
-            this._store.incrementLimit(key, now + this._period, ({
+            this._store.increment(key, now + this._period, ({
                 current = 1,
                 reset   = now + this._period
             } = {}) => {

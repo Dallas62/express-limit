@@ -1,10 +1,12 @@
 
 const RateLimiter = require('./src/rate-limiter');
-const RateLimitStore = require('./src/rate-limit-store');
+const InMemoryStore = require('./src/in-memory-store');
+const RedisStore = require('./src/redis-store');
 
 module.exports = {
     RateLimiter,
-    RateLimitStore,
+    InMemoryStore,
+    RedisStore,
     limit: function(options) {
         "use strict";
 

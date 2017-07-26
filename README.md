@@ -23,7 +23,7 @@ app.get('/api/users', limit({
 ```
  
  
- ## Options
+## Options
  
  ```
  {
@@ -46,55 +46,53 @@ app.get('/api/users', limit({
  }
  ```
  
- ## Custom Store
- 
- If you want to implement a special store like Redis or MongoDB, you can use a custom Store.
- To help you, you can take a look to this example to create your own.
- 
- ```
- const RateLimitStore = require('express-limit').RateLimitStore;
- const RateLimiter = require('express-limit').RateLimiter;
- 
- 
-class InMemory {
+## Available Stores
 
-    constructor() {
-        this._storage = {};
-    }
+Actually, two stores have been made:
 
-    increment(key, reset, callback) {
-        if('function' !== typeof callback) {
-            return;
-        }
+- InMemoryStore (default store, nothing to do)
+```
+const RateLimiter = require('express-limit').RateLimiter;
+const InMemoryStore = require('express-limit').InMemoryStore;
 
-        if(
-            !this._storage[key] ||
-             this._storage[key].reset <= Date.now()
-        ) {
+const store = new InMemoryStore(client);
 
-            this._storage[key] = {
-                current: 0,
-                reset:   reset
-            };
-        }
+const limit = new RateLimiter({ 
+    store: store
+}).middleware;
 
-        this._storage[key].current++;
 
-        callback(this._storage[key]);
-    }
-}
+app.get('/api/users', limit({
+    max:    5,        // 5 requests
+    period: 60 * 1000 // per minute (60 seconds)
+}), function(req, res) {
+    res.status(200).json({});
+});
 
-const MyStore = new RateLimitStore(new InMemory());
-const limit = function(options = {}) {
-    
-    options.store = new MyStore();
-    
-    return new RateLimiter(options).middleware;
-};
- 
- ```
- 
- Concrete sample using redis will be added soon.
- 
+```
+- RedisStore
+```
+const redis = require('redis');
+const client = redis.createClient();
+
+const RateLimiter = require('express-limit').RateLimiter;
+const RedisStore = require('express-limit').RedisStore;
+
+const store = new RedisStore(client);
+
+const limit = new RateLimiter({ 
+    store: store
+}).middleware;
+
+
+app.get('/api/users', limit({
+    max:    5,        // 5 requests
+    period: 60 * 1000 // per minute (60 seconds)
+}), function(req, res) {
+    res.status(200).json({});
+});
+
+```
+
 
 [Keep in touch!](https://twitter.com/BorisTacyniak)

@@ -46,7 +46,7 @@ module.exports = testCase({
             .expect(429, () => test.done());
     },
     'RateLimiter - Key name': function (test) {
-        test.equal(typeof rateLimiter._store._store._storage['rate-limit-/test-::ffff:127.0.0.1'], 'object');
+        test.equal(typeof rateLimiter._store._storage['rate-limit-/test-::ffff:127.0.0.1'], 'object');
 
         test.done();
     }

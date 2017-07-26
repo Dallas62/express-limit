@@ -1,22 +1,22 @@
 'use strict';
 
-let testCase  = require('nodeunit').testCase;
+const testCase  = require('nodeunit').testCase;
 
-let RateLimitStore = require('../src/rate-limit-store');
+const InMemoryStore = require('../src/in-memory-store');
 
 module.exports = testCase({
-    'RateLimitStore - Test InMemory increment': function (test) {
+    'InMemoryStore - Test increment': function (test) {
 
-        const key   = 'test';
+        const key   = 'test-1';
         const reset = Date.now() + 1000;
-        const rateLimitStore = new RateLimitStore();
+        const rateLimitStore = new InMemoryStore();
 
-        rateLimitStore.incrementLimit(key, reset, (limits) => {
+        rateLimitStore.increment(key, reset, (limits) => {
 
             test.equal(limits.current, 1);
             test.equal(limits.reset,   reset);
 
-            rateLimitStore.incrementLimit(key, reset, (limits) => {
+            rateLimitStore.increment(key, reset, (limits) => {
                 test.equal(limits.current, 2);
                 test.equal(limits.reset,   reset);
 
@@ -24,23 +24,23 @@ module.exports = testCase({
             });
         });
     },
-    'RateLimitStore - Test InMemory increment expiration': function (test) {
+    'InMemoryStore - Test increment expiration': function (test) {
 
-        const key   = 'test';
+        const key   = 'test-2';
         const reset = Date.now() + 1000;
-        const rateLimitStore = new RateLimitStore();
+        const rateLimitStore = new InMemoryStore();
 
-        rateLimitStore.incrementLimit(key, reset, (limits) => {
+        rateLimitStore.increment(key, reset, (limits) => {
 
             test.equal(limits.current, 1);
             test.equal(limits.reset,   reset);
 
-            rateLimitStore.incrementLimit(key, reset, (limits) => {
+            rateLimitStore.increment(key, reset, (limits) => {
                 test.equal(limits.current, 2);
                 test.equal(limits.reset,   reset);
 
                 setTimeout(() => {
-                    rateLimitStore.incrementLimit(key, reset + 1000, (limits) => {
+                    rateLimitStore.increment(key, reset + 1000, (limits) => {
                         test.equal(limits.current, 1);
                         test.equal(limits.reset,   reset + 1000);
 
