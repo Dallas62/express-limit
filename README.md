@@ -46,6 +46,25 @@ app.get('/api/users', limit({
  }
  ```
  
+In some cases, you could want to skip the limitation you made for trusted client.
+In this case, you can add a special field in the request object:
+
+```
+req._skip_limits = true;
+```
+Also, you could want to add specific limitations for a special client.
+In this case, you can add a special field in the request object:
+
+```
+req._custom_limits = {
+    max:    1000,      // 1000 requests
+    period: 60 * 1000  // per minutes
+};
+```
+
+Just don't forget where you place this modification! It could be applied for all routes!
+
+ 
 ## Available Stores
 
 Actually, two stores have been made:
