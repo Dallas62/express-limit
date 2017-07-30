@@ -4,13 +4,13 @@
 
 ## Installation
 
-```
+```console
 npm install --save express-limit
 ```
 
 ## Usage
 
-```
+```js
 const limit = require('express-limit').limit;
 
 app.get('/api/users', limit({
@@ -25,7 +25,7 @@ app.get('/api/users', limit({
  
 ## Options
  
- ```
+ ```js
  {
      max        = 60,                  // Maximum request per period
      period     = 60 * 1000,           // Period in milliseconds
@@ -49,13 +49,13 @@ app.get('/api/users', limit({
 In some cases, you could want to skip the limitation you made for trusted client.
 In this case, you can add a special field in the request object:
 
-```
+```js
 req._skip_limits = true;
 ```
 Also, you could want to add specific limitations for a special client.
 In this case, you can add a special field in the request object:
 
-```
+```js
 req._custom_limits = {
     max:    1000,      // 1000 requests
     period: 60 * 1000  // per minutes
@@ -70,7 +70,8 @@ Just don't forget where you place this modification! It could be applied for all
 Actually, two stores have been made:
 
 - InMemoryStore (default store, nothing to do)
-```
+
+```js
 const RateLimiter = require('express-limit').RateLimiter;
 const InMemoryStore = require('express-limit').InMemoryStore;
 
@@ -89,8 +90,10 @@ app.get('/api/users', limit({
 });
 
 ```
+
 - RedisStore
-```
+
+```js
 const redis = require('redis');
 const client = redis.createClient();
 
