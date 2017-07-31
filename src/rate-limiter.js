@@ -10,7 +10,6 @@ class RateLimiter {
                     message = 'Too many requests',
                     identifier = request => {
                         return request.ip || request.ips ||       // Read from Default properties
-                            request.headers['x-forwarded-for'] || // Read from Headers
                             request.connection.remoteAddress;     // Read from Connection / Socket
                     },
                     headers = { // Default headers value

@@ -34,7 +34,6 @@ app.get('/api/users', limit({
      message    = 'Too many requests', // Message in case of rate limit reached
      identifier = request => {         // The identifier function/value of the key (IP by default, could be "req.user.id")
          return request.ip || request.ips ||          // Read from Default properties
-                request.headers['x-forwarded-for'] || // Read from Headers
                 request.connection.remoteAddress;     // Read from Connection / Socket
      },
      headers = {                       // Headers names
@@ -75,7 +74,7 @@ Actually, two stores have been made:
 const RateLimiter = require('express-limit').RateLimiter;
 const InMemoryStore = require('express-limit').InMemoryStore;
 
-const store = new InMemoryStore(client);
+const store = new InMemoryStore();
 
 const limit = new RateLimiter({ 
     store: store
