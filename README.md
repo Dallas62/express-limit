@@ -75,10 +75,11 @@ const InMemoryStore = require('express-limit').InMemoryStore;
 
 const store = new InMemoryStore();
 
-const limit = new RateLimiter({ 
-    store: store
-}).middleware;
-
+const limit = (options = {}) => {
+    options.store = store;
+    
+    return new RateLimiter(options).middleware;
+};
 
 app.get('/api/users', limit({
     max:    5,        // 5 requests
@@ -100,10 +101,11 @@ const RedisStore = require('express-limit').RedisStore;
 
 const store = new RedisStore(client);
 
-const limit = new RateLimiter({ 
-    store: store
-}).middleware;
-
+const limit = (options = {}) => {    
+    options.store = store;
+    
+    return new RateLimiter(options).middleware;
+};
 
 app.get('/api/users', limit({
     max:    5,        // 5 requests
