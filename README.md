@@ -33,8 +33,7 @@ app.get('/api/users', limit({
      status     = 429,                 // Status code in case of rate limit reached
      message    = 'Too many requests', // Message in case of rate limit reached
      identifier = request => {         // The identifier function/value of the key (IP by default, could be "req.user.id")
-         return request.ip || request.ips ||          // Read from Default properties
-                request.connection.remoteAddress;     // Read from Connection / Socket
+         return request.ip || request.ips; // Read from Default properties
      },
      headers = {                       // Headers names
          remaining: 'X-RateLimit-Remaining',

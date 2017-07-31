@@ -1,6 +1,6 @@
 {
   "name": "express-limit",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A rate-limiter for Express JS.",
   "main": "index.js",
   "scripts": {
