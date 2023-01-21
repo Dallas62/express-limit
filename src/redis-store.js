@@ -11,8 +11,7 @@ class RedisStore {
 
         this._client.get(key + '_reset', (err, value) => {
             if (err) {
-                logger.error(err);
-                throw err;
+                return callback({}, err);
             }
 
             const multi = this._client.multi();
@@ -33,8 +32,7 @@ class RedisStore {
 
             multi.exec((err, replies) => {
                 if (err) {
-                    logger.error(err);
-                    throw err;
+                    return callback({}, err);
                 }
 
                 callback({
