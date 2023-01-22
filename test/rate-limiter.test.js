@@ -1,186 +1,197 @@
-'use strict';
+"use strict";
 
-const testCase = require('nodeunit').testCase;
+const RateLimiter = require("../src/rate-limiter");
 
-const RateLimiter = require('../src/rate-limiter');
-
-const express = require('express');
-const request = require('supertest');
+const express = require("express");
+const request = require("supertest");
 
 const app = express();
 
 const rateLimiter = new RateLimiter({
-    max: 5,
-    period: 1000
+  max: 5,
+  period: 1000,
 });
 
 let skipLimits = false;
 let customLimits = false;
 
-app.get('/test', function (req, res, next) {
+app.get(
+  "/test",
+  function (req, res, next) {
     if (true === skipLimits) {
-        req._skip_limits = true;
+      req._skip_limits = true;
     }
 
     if (true === customLimits) {
-        req._custom_limits = {
-            max: 50,
-            period: 2000
-        };
+      req._custom_limits = {
+        max: 50,
+        period: 2000,
+      };
     }
 
     next();
-}, rateLimiter.middleware, function (req, res) {
-    res.status(200).json({test: 'OK'});
+  },
+  rateLimiter.middleware,
+  function (req, res) {
+    res.status(200).json({ test: "OK" });
+  }
+);
+
+test("RateLimiter - Test limits OK", function (done) {
+  let counter = 0;
+
+  for (let i = 1; i <= 5; i++) {
+    request(app)
+      .get("/test")
+      .expect("Content-Type", /json/)
+      .expect("X-RateLimit-Remaining", String(Math.floor(5 - i)))
+      .expect("X-RateLimit-Limit", String(5))
+      .expect(200)
+      .then((response) => {
+        expect(response.body.test).toEqual("OK");
+        counter++;
+
+        if (5 === counter) {
+          done();
+        }
+      });
+  }
 });
 
-module.exports = testCase({
-    'RateLimiter - Test limits OK': function (test) {
+test("RateLimiter - Test limits KO", function (done) {
+  request(app)
+    .get("/test")
+    .expect(429, () => {
+      setTimeout(done, 1000);
+    });
+});
 
-        let counter = 0;
+test("RateLimiter - Test skip limits", function (done) {
+  skipLimits = true;
 
-        for (let i = 1; i <= 5; i++) {
-            request(app)
-                .get('/test')
-                .expect('Content-Type', /json/)
-                .expect('X-RateLimit-Remaining', String(Math.floor(5 - i)))
-                .expect('X-RateLimit-Limit', String(5))
-                .expect(200)
-                .then(response => {
-                    test.equal(response.body.test, 'OK');
-                    counter++;
+  let counter = 0;
 
-                    if (5 === counter) {
-                        test.done();
-                    }
-                });
+  for (let i = 1; i <= 50; i++) {
+    request(app)
+      .get("/test")
+      .expect("Content-Type", /json/)
+      .expect(200)
+      .then((response) => {
+        expect(response.body.test).toEqual("OK");
+
+        counter++;
+
+        if (50 === counter) {
+          skipLimits = false;
+
+          done();
         }
-    },
-    'RateLimiter - Test limits KO': function (test) {
-        request(app)
-            .get('/test')
-            .expect(429, () => {
-                setTimeout(function () {
-                    test.done();
-                }, 1000);
-            });
-    },
-    'RateLimiter - Test skip limits': function (test) {
-        skipLimits = true;
+      });
+  }
+});
 
-        let counter = 0;
+test("RateLimiter - Test custom limits OK", function (done) {
+  customLimits = true;
 
-        for (let i = 1; i <= 50; i++) {
-            request(app)
-                .get('/test')
-                .expect('Content-Type', /json/)
-                .expect(200)
-                .then(response => {
-                    test.equal(response.body.test, 'OK');
+  let counter = 0;
 
-                    counter++;
+  for (let i = 1; i <= 50; i++) {
+    request(app)
+      .get("/test")
+      .expect("Content-Type", /json/)
+      .expect(200)
+      .end((_, response) => {
+        expect(response.body.test).toEqual("OK");
 
-                    if (50 === counter) {
-                        skipLimits = false;
+        counter++;
 
-                        test.done();
-                    }
-                });
+        if (50 === counter) {
+          done();
         }
+      });
+  }
+});
+
+test("RateLimiter - Test custom limits KO", function (done) {
+  request(app)
+    .get("/test")
+    .expect(429, () => {
+      customLimits = false;
+
+      setTimeout(done, 2000);
+    });
+});
+
+test("RateLimiter - Key name", function (done) {
+  expect(
+    typeof rateLimiter._store._storage["rate-limit-/test-::ffff:127.0.0.1"]
+  ).toEqual("object");
+
+  done();
+});
+
+test("RateLimiter - Test handling error within store", function (done) {
+  class ErrorStore {
+    increment(key, reset, callback) {
+      callback({}, new Error("Error thrown by store"));
+    }
+  }
+
+  const errorRateLimiter = new RateLimiter({
+    store: new ErrorStore(),
+  });
+
+  app.get(
+    "/test-store-error",
+    errorRateLimiter.middleware,
+    function (req, res) {
+      res.status(200).json({ test: "OK" });
+    }
+  );
+
+  request(app).get("/test-store-error").expect(500, done);
+});
+
+test("RateLimiter - Test handling async error", function (done) {
+  class AsyncStore {
+    increment(key, reset, callback) {
+      setTimeout(function () {
+        callback({ reset: reset, current: 1 });
+      }, 1000);
+    }
+  }
+  const asyncRateLimiter = new RateLimiter({
+    store: new AsyncStore(),
+  });
+
+  let propagatedError = {};
+
+  app.get(
+    "/test-header-error",
+    function (req, res, next) {
+      res.status(200).json({ test: "OK" });
+      next();
     },
-    'RateLimiter - Test custom limits OK': function (test) {
-        customLimits = true;
+    asyncRateLimiter.middleware,
+    function (error, req, res, next) {
+      if (error) {
+        propagatedError = error;
+        return;
+      }
+      res.status(204).send();
+    }
+  );
 
-        let counter = 0;
+  request(app)
+    .get("/test-header-error")
+    .expect(200)
+    .end((_, response) => {
+      expect(response.body.test).toEqual("OK");
 
-        for (let i = 1; i <= 50; i++) {
-            request(app)
-                .get('/test')
-                .expect('Content-Type', /json/)
-                .expect(200)
-                .then(response => {
-                    test.equal(response.body.test, 'OK');
+      setTimeout(function () {
+        expect(propagatedError.code).toEqual("ERR_HTTP_HEADERS_SENT");
 
-                    counter++;
-
-                    if (50 === counter) {
-                        test.done();
-                    }
-                });
-        }
-    },
-    'RateLimiter - Test custom limits KO': function (test) {
-        request(app)
-            .get('/test')
-            .expect(429, () => {
-                customLimits = false;
-                
-                setTimeout(function () {
-                    test.done();
-                }, 2000);
-            });
-    },
-    'RateLimiter - Key name': function (test) {
-        test.equal(typeof rateLimiter._store._storage['rate-limit-/test-::ffff:127.0.0.1'], 'object');
-
-        test.done();
-    },
-    'RateLimiter - Test handling error within store': function (test) {
-        class ErrorStore {
-            increment(key, reset, callback) {
-                callback({}, new Error('Error thrown by store'));
-            }
-        }
-
-        const errorRateLimiter = new RateLimiter({
-            store: new ErrorStore()
-        });
-
-        app.get('/test-store-error', errorRateLimiter.middleware, function (req, res) {
-            res.status(200).json({test: 'OK'});
-        });
-
-        request(app)
-            .get('/test-store-error')
-            .expect(500)
-            .then(() => {
-                test.done();
-            });
-    },
-    'RateLimiter - Test handling async error': function (test) {
-        class AsyncStore {
-            increment(key, reset, callback) {
-                setTimeout(function () {
-                    callback({ reset: reset, current: 1 });
-                }, 1000);
-            }
-        }
-        const asyncRateLimiter = new RateLimiter({
-            store: new AsyncStore()
-        });
-
-        let propagatedError = {};
-
-        app.get('/test-header-error', function (req, res, next) {
-            res.status(200).json({test: 'OK'});
-            next();
-        }, asyncRateLimiter.middleware, function (error, req, res, next) {
-            if (error) {
-                propagatedError = error;
-                return;
-            }
-            res.status(204).send();
-        });
-
-        request(app)
-            .get('/test-header-error')
-            .expect(200)
-            .then((response) => {
-                test.equal(response.body.test, 'OK')
-                setTimeout(function () {
-                    test.equal(propagatedError.code, 'ERR_HTTP_HEADERS_SENT');
-                    test.done();
-                }, 2000);
-            });
-    },
+        done();
+      }, 2000);
+    });
 });
