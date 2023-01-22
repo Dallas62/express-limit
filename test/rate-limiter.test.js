@@ -124,5 +124,63 @@ module.exports = testCase({
         test.equal(typeof rateLimiter._store._storage['rate-limit-/test-::ffff:127.0.0.1'], 'object');
 
         test.done();
-    }
+    },
+    'RateLimiter - Test handling error within store': function (test) {
+        class ErrorStore {
+            increment(key, reset, callback) {
+                callback({}, new Error('Error thrown by store'));
+            }
+        }
+
+        const errorRateLimiter = new RateLimiter({
+            store: new ErrorStore()
+        });
+
+        app.get('/test-store-error', errorRateLimiter.middleware, function (req, res) {
+            res.status(200).json({test: 'OK'});
+        });
+
+        request(app)
+            .get('/test-store-error')
+            .expect(500)
+            .then(() => {
+                test.done();
+            });
+    },
+    'RateLimiter - Test handling async error': function (test) {
+        class AsyncStore {
+            increment(key, reset, callback) {
+                setTimeout(function () {
+                    callback({ reset: reset, current: 1 });
+                }, 1000);
+            }
+        }
+        const asyncRateLimiter = new RateLimiter({
+            store: new AsyncStore()
+        });
+
+        let propagatedError = {};
+
+        app.get('/test-header-error', function (req, res, next) {
+            res.status(200).json({test: 'OK'});
+            next();
+        }, asyncRateLimiter.middleware, function (error, req, res, next) {
+            if (error) {
+                propagatedError = error;
+                return;
+            }
+            res.status(204).send();
+        });
+
+        request(app)
+            .get('/test-header-error')
+            .expect(200)
+            .then((response) => {
+                test.equal(response.body.test, 'OK')
+                setTimeout(function () {
+                    test.equal(propagatedError.code, 'ERR_HTTP_HEADERS_SENT');
+                    test.done();
+                }, 2000);
+            });
+    },
 });

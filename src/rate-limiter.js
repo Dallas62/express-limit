@@ -67,7 +67,10 @@ class RateLimiter {
             this._store.increment(key, limit, ({
                                                    current = 1,
                                                    reset = limit
-                                               } = {}) => {
+                                               } = {}, error) => {
+                if (error) {
+                    return next(error);
+                }
 
                 // Max limit reached
                 if (current > max) {
@@ -76,9 +79,14 @@ class RateLimiter {
                     return next(err);
                 }
 
-                res.header(this._headers.remaining, Math.floor(max - current));
-                res.header(this._headers.limit, max);
-                res.header(this._headers.reset, reset);
+                try {
+                    res.header(this._headers.remaining, Math.floor(max - current));
+                    res.header(this._headers.limit, max);
+                    res.header(this._headers.reset, reset);
+                } catch (err) {
+                    return next(err);
+                }
+
 
                 next();
             });
