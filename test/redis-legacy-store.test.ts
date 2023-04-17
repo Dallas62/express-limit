@@ -1,12 +1,10 @@
-"use strict";
-
-// Initialize Redis
-const redis = require("redis");
+import * as redis from 'redis';
+import { afterAll, beforeAll, expect, test} from '@jest/globals';
 const client = redis.createClient({
   legacyMode: true,
 });
 
-const RedisLegacyStore = require("../src/redis-legacy-store");
+const RedisLegacyStore = require('../src/redis-legacy-store');
 
 beforeAll(function () {
   return client.connect();
@@ -16,16 +14,16 @@ afterAll(function () {
   return client.disconnect();
 });
 
-test("RedisLegacyStore - Test increment", function (done) {
-  const key = "legacy-test-1";
+test('RedisLegacyStore - Test increment', function (done) {
+  const key = 'legacy-test-1';
   const reset = Date.now() + 1000;
   const rateLimitStore = new RedisLegacyStore(client);
 
-  rateLimitStore.increment(key, reset, (limits) => {
+  rateLimitStore.increment(key, reset, limits => {
     expect(limits.current).toEqual(1);
     expect(limits.reset).toEqual(reset);
 
-    rateLimitStore.increment(key, reset, (limits) => {
+    rateLimitStore.increment(key, reset, limits => {
       expect(limits.current).toEqual(2);
       expect(limits.reset).toEqual(reset);
 
@@ -34,21 +32,21 @@ test("RedisLegacyStore - Test increment", function (done) {
   });
 });
 
-test("RedisLegacyStore - Test increment expiration", function (done) {
-  const key = "legacy-test-2";
+test('RedisLegacyStore - Test increment expiration', function (done) {
+  const key = 'legacy-test-2';
   const reset = Date.now() + 1000;
   const rateLimitStore = new RedisLegacyStore(client);
 
-  rateLimitStore.increment(key, reset, (limits) => {
+  rateLimitStore.increment(key, reset, limits => {
     expect(limits.current).toEqual(1);
     expect(limits.reset).toEqual(reset);
 
-    rateLimitStore.increment(key, reset, (limits) => {
+    rateLimitStore.increment(key, reset, limits => {
       expect(limits.current).toEqual(2);
       expect(limits.reset).toEqual(reset);
 
       setTimeout(() => {
-        rateLimitStore.increment(key, reset + 1000, (limits) => {
+        rateLimitStore.increment(key, reset + 1000, limits => {
           expect(limits.current).toEqual(1);
           expect(limits.reset).toEqual(reset + 1000);
 
